@@ -1,0 +1,31 @@
+* {
+    box-sizing: border-box;
+  }
+  
+  body {
+    background-color: #333;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+  }
+  
+  #canvas {
+    position: relative;
+    background: #ececec;
+    border-radius: 5px;
+  }
+
+  .slider {
+    direction: rtl;
+  }
+
+  .slideContainer {
+    position: absolute;
+    bottom: 100px;
+  }
+  
