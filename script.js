@@ -122,7 +122,8 @@ function rays(u) {
         drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + v, lens.yo + I, 2, 'black');
         drawArrow(ctx, lens.xo, lens.yo, lens.xo + v, lens.yo + I, 2, 'black');
     } else if (inputValue < 200) {
-        drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + 200, lens.yo, 2, 'black');
+        drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + 1000, lens.yo + 264, 2, 'black');
+        drawArrow(ctx, lens.xo, lens.yo, lens.xo + (10 * u), lens.yo + 660, 2, 'black');
         ctx.beginPath();
         ctx.setLineDash([5, 3]);
         ctx.moveTo(lens.xo + v, lens.yo + I);
