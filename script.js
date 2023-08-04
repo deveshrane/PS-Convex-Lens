@@ -1,12 +1,15 @@
 const canvas = document.querySelector('#canvas');
 const ctx = canvas.getContext('2d');
 const slider = document.getElementById('myRange');
+const box = document.getElementById('option');
+console.log(box);
 var inputValue = 600;
 var v = 0;
 var I = 0;
-
+var value = 0;
 canvas.width = window.innerWidth - 100;
 canvas.height = window.innerHeight - 100;
+box.style.left = `${(canvas.width / 2) - 150}px`;
 const lens = {
     xo: canvas.width / 2,
     yo: canvas.height / 2,
@@ -98,54 +101,113 @@ function drawArrow(ctx, fromx, fromy, tox, toy, arrowWidth, color) {
     ctx.restore();
 }
 function objects(u) {
-    ctx.beginPath();
-    ctx.setLineDash([0]);
-    drawArrow(ctx, (canvas.width / 2) - u, lens.yo, (canvas.width / 2) - u, lens.yo - 66, 3, 'black');
-    ctx.closePath();
+    if (value == 0) {
+        ctx.beginPath();
+        ctx.setLineDash([0]);
+        drawArrow(ctx, (canvas.width / 2) - u, lens.yo, (canvas.width / 2) - u, lens.yo - 66, 3, 'black');
+        ctx.closePath();
+    } else if (value == 1) {
+        ctx.beginPath();
+        ctx.setLineDash([0]);
+        drawArrow(ctx, (canvas.width / 2) - u, lens.yo + 66, (canvas.width / 2) - u, lens.yo - 66, 3, 'black');
+        ctx.closePath();
+    }
 }
 function image(v, I) {
     ctx.beginPath();
-
-    if (inputValue < 200) {
-        ctx.setLineDash([5, 3]);
-    } else {
-        ctx.setLineDash([0]);
+    if (value == 0) {
+        if (inputValue < 200) {
+            ctx.setLineDash([5, 3]);
+        } else {
+            ctx.setLineDash([0]);
+        }
+        ctx.beginPath();
+        drawArrow(ctx, lens.xo + v, lens.yo, lens.xo + v, lens.yo + I, 3, 'black');
+        ctx.closePath();
+    } else if (value == 1) {
+        if (inputValue < 200) {
+            ctx.setLineDash([5, 3]);
+        } else {
+            ctx.setLineDash([0]);
+        }
+        ctx.beginPath();
+        drawArrow(ctx, lens.xo + v, lens.yo - I, lens.xo + v, lens.yo + I, 3, 'black');
+        ctx.closePath();
     }
-    drawArrow(ctx, lens.xo + v, lens.yo, lens.xo + v, lens.yo + I, 3, 'black');
     ctx.closePath();
 }
 function rays(u) {
-    ctx.setLineDash([0]);
-    drawArrow(ctx, (lens.xo - u), lens.yo - 66, lens.xo, lens.yo - 66, 2, 'black');
-    drawArrow(ctx, (lens.xo - u), lens.yo - 66, lens.xo, lens.yo, 2, 'black');
-    if (inputValue >= 200 && inputValue <= 600) {
-        drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + v, lens.yo + I, 2, 'black');
-        drawArrow(ctx, lens.xo, lens.yo, lens.xo + v, lens.yo + I, 2, 'black');
-    } else if (inputValue < 200) {
-        drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + 1000, lens.yo + 264, 2, 'black');
-        drawArrow(ctx, lens.xo, lens.yo, lens.xo + (10 * u), lens.yo + 660, 2, 'black');
-        ctx.beginPath();
-        ctx.setLineDash([5, 3]);
-        ctx.moveTo(lens.xo + v, lens.yo + I);
-        ctx.lineTo(lens.xo - u, lens.yo - 66);
-        ctx.moveTo(lens.xo + v, lens.yo + I);
-        ctx.lineTo(lens.xo, lens.yo - 66);
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.closePath();
-        ctx.lineWidth = 1;
+    if (value == 0) {
         ctx.setLineDash([0]);
+        drawArrow(ctx, (lens.xo - u), lens.yo - 66, lens.xo, lens.yo - 66, 2, 'black');
+        drawArrow(ctx, (lens.xo - u), lens.yo - 66, lens.xo, lens.yo, 2, 'black');
+        if (inputValue >= 200 && inputValue <= 600) {
+            drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + v, lens.yo + I, 2, 'black');
+            drawArrow(ctx, lens.xo, lens.yo, lens.xo + v, lens.yo + I, 2, 'black');
+        } else if (inputValue < 200) {
+            drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + 1000, lens.yo + 264, 2, 'black');
+            drawArrow(ctx, lens.xo, lens.yo, lens.xo + (10 * u), lens.yo + 660, 2, 'black');
+            ctx.beginPath();
+            ctx.setLineDash([5, 3]);
+            ctx.moveTo(lens.xo + v, lens.yo + I);
+            ctx.lineTo(lens.xo - u, lens.yo - 66);
+            ctx.moveTo(lens.xo + v, lens.yo + I);
+            ctx.lineTo(lens.xo, lens.yo - 66);
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.closePath();
+            ctx.lineWidth = 1;
+            ctx.setLineDash([0]);
+        }
+    } else if (value == 1) {
+        ctx.setLineDash([0]);
+        drawArrow(ctx, (lens.xo - u), lens.yo - 66, lens.xo, lens.yo - 66, 2, 'red');
+        drawArrow(ctx, (lens.xo - u), lens.yo + 66, lens.xo, lens.yo + 66, 2, 'blue');
+        drawArrow(ctx, (lens.xo - u), lens.yo - 66, lens.xo, lens.yo, 2, 'red');
+        drawArrow(ctx, (lens.xo - u), lens.yo + 66, lens.xo, lens.yo, 2, 'blue');
+        if (inputValue >= 200 && inputValue <= 600) {
+            drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + v, lens.yo + I, 2, 'red');
+            drawArrow(ctx, lens.xo, lens.yo, lens.xo + v, lens.yo + I, 2, 'red');
+            drawArrow(ctx, lens.xo, lens.yo + 66, lens.xo + v, lens.yo - I, 2, 'blue');
+            drawArrow(ctx, lens.xo, lens.yo, lens.xo + v, lens.yo - I, 2, 'blue');
+        } else if (inputValue < 200) {
+            drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + 1000, lens.yo + 264, 2, 'red');
+            drawArrow(ctx, lens.xo, lens.yo, lens.xo + (10 * u), lens.yo + 660, 2, 'red');
+            drawArrow(ctx, lens.xo, lens.yo + 66, lens.xo + 1000, lens.yo - 264, 2, 'blue');
+            drawArrow(ctx, lens.xo, lens.yo, lens.xo + (10 * u), lens.yo - 660, 2, 'blue');
+            ctx.beginPath();
+            ctx.setLineDash([5, 3]);
+            ctx.lineWidth = 2;
+            ctx.moveTo(lens.xo + v, lens.yo + I);
+            ctx.lineTo(lens.xo - u, lens.yo - 66);
+            ctx.moveTo(lens.xo + v, lens.yo + I);
+            ctx.lineTo(lens.xo, lens.yo - 66);
+            ctx.moveTo(lens.xo + v, lens.yo - I);
+            ctx.lineTo(lens.xo - u, lens.yo + 66);
+            ctx.moveTo(lens.xo + v, lens.yo - I);
+            ctx.lineTo(lens.xo, lens.yo + 66);
+            ctx.stroke();
+            ctx.closePath();
+            ctx.lineWidth = 1;
+            ctx.setLineDash([0]);
+        }
     }
 }
 
+
 function update() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    var data = document.getElementsByName("objectsinput");
+    for (var i = 0; i < data.length; i++) {
+        if (data[i].checked) {
+            value = data[i].value;
+        }
+    }
     slider.oninput = function () {
         inputValue = this.value;
         objects(this.value);
         v = (this.value * 200) / (parseInt(this.value) - 200);
         I = (66 * v) / this.value;
-        console.log(v + " " + I);
         image(v, I);
         rays(this.value);
     };
