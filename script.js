@@ -2,7 +2,6 @@ const canvas = document.querySelector('#canvas');
 const ctx = canvas.getContext('2d');
 const slider = document.getElementById('myRange');
 const box = document.getElementById('option');
-console.log(box);
 var inputValue = 600;
 var v = 0;
 var I = 0;
