@@ -18,7 +18,6 @@ const lens = {
     xc2: (canvas.width / 2) + 173,
     yc2: canvas.height / 2,
 };
-// Basic Diagram
 function convexLens() {
 
     ctx.beginPath();
@@ -61,7 +60,6 @@ function imaginaryLine() {
     ctx.stroke();
     ctx.closePath();
 }
-// Object and Image
 function drawArrow(ctx, fromx, fromy, tox, toy, arrowWidth, color) {
     //variables to be used when creating the arrow
     var headlen = 10;
@@ -160,20 +158,20 @@ function rays(u) {
         }
     } else if (value == 1) {
         ctx.setLineDash([0]);
-        drawArrow(ctx, (lens.xo - u), lens.yo - 66, lens.xo, lens.yo - 66, 2, 'red');
-        drawArrow(ctx, (lens.xo - u), lens.yo + 66, lens.xo, lens.yo + 66, 2, 'blue');
-        drawArrow(ctx, (lens.xo - u), lens.yo - 66, lens.xo, lens.yo, 2, 'red');
-        drawArrow(ctx, (lens.xo - u), lens.yo + 66, lens.xo, lens.yo, 2, 'blue');
+        drawArrow(ctx, (lens.xo - u), lens.yo - 66, lens.xo, lens.yo - 66, 2, '#ab1e00');
+        drawArrow(ctx, (lens.xo - u), lens.yo + 66, lens.xo, lens.yo + 66, 2, '#0014b8');
+        drawArrow(ctx, (lens.xo - u), lens.yo - 66, lens.xo, lens.yo, 2, '#ab1e00');
+        drawArrow(ctx, (lens.xo - u), lens.yo + 66, lens.xo, lens.yo, 2, '#0014b8');
         if (inputValue >= 200 && inputValue <= 600) {
-            drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + v, lens.yo + I, 2, 'red');
-            drawArrow(ctx, lens.xo, lens.yo, lens.xo + v, lens.yo + I, 2, 'red');
-            drawArrow(ctx, lens.xo, lens.yo + 66, lens.xo + v, lens.yo - I, 2, 'blue');
-            drawArrow(ctx, lens.xo, lens.yo, lens.xo + v, lens.yo - I, 2, 'blue');
+            drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + v, lens.yo + I, 2, '#ab1e00');
+            drawArrow(ctx, lens.xo, lens.yo, lens.xo + v, lens.yo + I, 2, '#ab1e00');
+            drawArrow(ctx, lens.xo, lens.yo + 66, lens.xo + v, lens.yo - I, 2, '#0014b8');
+            drawArrow(ctx, lens.xo, lens.yo, lens.xo + v, lens.yo - I, 2, '#0014b8');
         } else if (inputValue < 200) {
-            drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + 1000, lens.yo + 264, 2, 'red');
-            drawArrow(ctx, lens.xo, lens.yo, lens.xo + (10 * u), lens.yo + 660, 2, 'red');
-            drawArrow(ctx, lens.xo, lens.yo + 66, lens.xo + 1000, lens.yo - 264, 2, 'blue');
-            drawArrow(ctx, lens.xo, lens.yo, lens.xo + (10 * u), lens.yo - 660, 2, 'blue');
+            drawArrow(ctx, lens.xo, lens.yo - 66, lens.xo + 1000, lens.yo + 264, 2, '#ab1e00');
+            drawArrow(ctx, lens.xo, lens.yo, lens.xo + (10 * u), lens.yo + 660, 2, '#ab1e00');
+            drawArrow(ctx, lens.xo, lens.yo + 66, lens.xo + 1000, lens.yo - 264, 2, '#0014b8');
+            drawArrow(ctx, lens.xo, lens.yo, lens.xo + (10 * u), lens.yo - 660, 2, '#0014b8');
             ctx.beginPath();
             ctx.setLineDash([5, 3]);
             ctx.lineWidth = 2;
@@ -192,8 +190,6 @@ function rays(u) {
         }
     }
 }
-
-
 function update() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     var data = document.getElementsByName("objectsinput");
@@ -219,9 +215,5 @@ function update() {
     rays(inputValue);
     requestAnimationFrame(update);
 }
-// Ray diagrams start here
-// Making Basic Diagram
-// Making of Ray Diagrams starts here
-
 update();
 
