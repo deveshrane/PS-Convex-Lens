@@ -157,18 +157,24 @@
     var ty = y1 + (y2 - y1) * p;
     line(x1, y1, tx, ty, color, width, dashed);
 
-    var head = 10;
+    // Two strokes meeting at the tip rather than a filled triangle. The
+    // head is always solid, even where the arrow itself is dashed.
+    var head = 12;
     var ang = Math.atan2(ty - y1, tx - x1);
+    ctx.save();
     ctx.beginPath();
     ctx.setLineDash([]);
-    ctx.moveTo(tx, ty);
-    ctx.lineTo(tx - head * Math.cos(ang - Math.PI / 7),
+    ctx.moveTo(tx - head * Math.cos(ang - Math.PI / 7),
       ty - head * Math.sin(ang - Math.PI / 7));
+    ctx.lineTo(tx, ty);
     ctx.lineTo(tx - head * Math.cos(ang + Math.PI / 7),
       ty - head * Math.sin(ang + Math.PI / 7));
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+    ctx.restore();
   }
 
   // A direction marker sitting at the middle of a ray, so the path can be
@@ -179,19 +185,23 @@
     var mx = (x1 + x2) / 2;
     var my = (y1 + y2) / 2;
     var ang = Math.atan2(y2 - y1, x2 - x1);
-    var head = 10;
+    var head = 11;
     var tx = mx + (head / 2) * Math.cos(ang);
     var ty = my + (head / 2) * Math.sin(ang);
+    ctx.save();
     ctx.beginPath();
     ctx.setLineDash([]);
-    ctx.moveTo(tx, ty);
-    ctx.lineTo(tx - head * Math.cos(ang - Math.PI / 6),
+    ctx.moveTo(tx - head * Math.cos(ang - Math.PI / 6),
       ty - head * Math.sin(ang - Math.PI / 6));
+    ctx.lineTo(tx, ty);
     ctx.lineTo(tx - head * Math.cos(ang + Math.PI / 6),
       ty - head * Math.sin(ang + Math.PI / 6));
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+    ctx.restore();
   }
 
   function label(text, x, y, color, align, baseline) {
