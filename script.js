@@ -276,13 +276,14 @@
     return [{ hy: -g.h, color: COLOR.single }];
   }
 
-  // The object is AB and its image A'B', with A the end on the axis when
-  // only half the object is drawn and the lower end when it is not.
-  function endsOf(g, atX, footY, tipY, prime, color, side) {
+  // The object is AB and its image A'B': A at the head of the arrow, B at
+  // its foot, which is the end on the axis when only half the object is
+  // drawn and the lower end when the whole of it is.
+  function endsOf(atX, headY, footY, prime, color, side) {
     var dx = side === "right" ? 9 : -9;
     var align = side === "right" ? "left" : "right";
-    label("A" + prime, atX + dx, footY, color, align);
-    label("B" + prime, atX + dx, tipY, color, align);
+    label("A" + prime, atX + dx, headY, color, align);
+    label("B" + prime, atX + dx, footY, color, align);
   }
 
   function drawObject(g, u, ph) {
@@ -291,7 +292,7 @@
     var footY = state.full ? g.yo + g.h : g.yo - 12;
     if (state.full) arrow(x, g.yo + g.h, x, g.yo - g.h, c, 3, false, ph);
     else arrow(x, g.yo, x, g.yo - g.h, c, 3, false, ph);
-    if (ph >= 1) endsOf(g, x, footY, g.yo - g.h, "", c, "left");
+    if (ph >= 1) endsOf(x, g.yo - g.h, footY, "", c, "left");
   }
 
   // Object at infinity: parallel rays that meet at the second focus.
@@ -341,10 +342,22 @@
     var img = imageOf(r);
     var tips = tipsOf(g);
 
-    drawObject(g, u, ph.object);
-
     var xi = img.atInfinity ? null : g.xo + img.vf * g.f;
     var onCanvas = xi !== null && xi > 4 && xi < W - 4;
+
+    // A virtual image sits where the refracted rays appear to come from.
+    // These are drawn first so the light rays lie over them, rather than
+    // being broken up by dashes where the two cross.
+    if (!img.atInfinity && img.vf < 0 && ph.back > 0) {
+      for (var b = 0; b < tips.length; b++) {
+        var bhy = tips[b].hy;
+        var by = g.yo - bhy * img.m;
+        grow(g.xo, g.yo + bhy, xi, by, COLOR.guide, 1.5, true, ph.back);
+        grow(g.xo, g.yo, xi, by, COLOR.guide, 1.5, true, ph.back);
+      }
+    }
+
+    drawObject(g, u, ph.object);
 
     for (var i = 0; i < tips.length; i++) {
       var hy = tips[i].hy;
@@ -372,12 +385,6 @@
         var stop = toEdge(g, d.x, d.y, d.dx, d.dy);
         grow(d.x, d.y, stop.x, stop.y, col, 2, false, ph.rayOut);
         chevron(d.x, d.y, stop.x, stop.y, col, ph.rayOut);
-
-        // A virtual image sits where the refracted rays appear to come
-        // from, so trace them backwards to it.
-        if (!img.atInfinity && img.vf < 0 && ph.back > 0) {
-          grow(d.x, d.y, xi, g.yo - hy * img.m, COLOR.guide, 1.5, true, ph.back);
-        }
       }
     }
 
@@ -386,15 +393,15 @@
       ctx.save();
       ctx.globalAlpha = ph.image;
       var virtual = img.vf < 0;
-      var topY = g.yo + g.h * img.m;
-      var botY = g.yo - g.h * img.m;
+      var headY = g.yo + g.h * img.m;          // image of the object's head
+      var footY = g.yo - g.h * img.m;          // image of its foot
       if (onCanvas) {
         var c = state.full ? COLOR.mark : COLOR.single;
-        if (state.full) arrow(xi, botY, xi, topY, c, 3, virtual, 1);
-        else arrow(xi, g.yo, xi, topY, c, 3, virtual, 1);
+        if (state.full) arrow(xi, footY, xi, headY, c, 3, virtual, 1);
+        else arrow(xi, g.yo, xi, headY, c, 3, virtual, 1);
         // Label on the far side of the image from the lens, so the names
         // never sit between the image and the rays that formed it.
-        endsOf(g, xi, state.full ? botY : g.yo - 12, topY, "'", c,
+        endsOf(xi, headY, state.full ? footY : g.yo - 12, "'", c,
           xi > g.xo ? "right" : "left");
       } else {
         // Just past the focus the image runs thousands of pixels away.
@@ -472,6 +479,11 @@
   var LO = parseFloat(slider.min);
   var HI = parseFloat(slider.max);
 
+  // The track reads far away on the left to near the lens on the right, so
+  // the thumb's position is the mirror of the distance it stands for.
+  function toDistance(pos) { return LO + HI - pos; }
+  function toPosition(r) { return LO + HI - r; }
+
   function interactive() { return state.lightOn && !state.playing; }
 
   function syncLock() {
@@ -501,7 +513,7 @@
   function setDistance(r, fromSlider) {
     state.atInfinity = false;
     state.r = Math.min(HI, Math.max(LO, r));
-    if (!fromSlider) slider.value = state.r;
+    if (!fromSlider) slider.value = toPosition(state.r);
 
     // Moving the slider or dragging the object is no longer one of the
     // standard cases, so nothing stays highlighted.
@@ -512,7 +524,7 @@
   }
 
   slider.addEventListener("input", function () {
-    setDistance(parseFloat(slider.value), true);
+    setDistance(toDistance(parseFloat(slider.value)), true);
   });
 
   $("presets").addEventListener("click", function (ev) {
@@ -525,7 +537,7 @@
     } else {
       state.atInfinity = false;
       state.r = CASES[key].r;
-      slider.value = state.r;
+      slider.value = toPosition(state.r);
     }
     syncPresets();
     updateHint();
@@ -631,7 +643,7 @@
     sizeObserver.observe(host);
   }
 
-  slider.value = state.r;
+  slider.value = toPosition(state.r);
   syncPresets();
   updateHint();
   syncLock();
