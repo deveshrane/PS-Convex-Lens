@@ -171,6 +171,29 @@
     ctx.fill();
   }
 
+  // A direction marker sitting at the middle of a ray, so the path can be
+  // read at a glance. It appears once the ray has grown past its midpoint.
+  function chevron(x1, y1, x2, y2, color, p) {
+    if (p === undefined) p = 1;
+    if (p < 0.5) return;
+    var mx = (x1 + x2) / 2;
+    var my = (y1 + y2) / 2;
+    var ang = Math.atan2(y2 - y1, x2 - x1);
+    var head = 10;
+    var tx = mx + (head / 2) * Math.cos(ang);
+    var ty = my + (head / 2) * Math.sin(ang);
+    ctx.beginPath();
+    ctx.setLineDash([]);
+    ctx.moveTo(tx, ty);
+    ctx.lineTo(tx - head * Math.cos(ang - Math.PI / 6),
+      ty - head * Math.sin(ang - Math.PI / 6));
+    ctx.lineTo(tx - head * Math.cos(ang + Math.PI / 6),
+      ty - head * Math.sin(ang + Math.PI / 6));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
   function label(text, x, y, color, align, baseline) {
     ctx.font = "600 13px " + UI_FONT;
     ctx.textAlign = align || "center";
@@ -223,7 +246,8 @@
 
   function drawMarks(g) {
     line(0, g.yo, g.W, g.yo, COLOR.axis, 1.2, false);
-    line(g.xo, g.yo - g.a - 26, g.xo, g.yo + g.a + 26, COLOR.guide, 1, true);
+    // The lens plane, drawn from one tip of the lens to the other.
+    line(g.xo, g.yo - g.a, g.xo, g.yo + g.a, COLOR.guide, 1, true);
 
     // Each mark gets its own path; sharing one leaves stray joins between
     // the arcs.
@@ -237,7 +261,7 @@
     for (var i = 0; i < marks.length; i++) {
       if (marks[i].x < 4 || marks[i].x > g.W - 4) continue;
       dot(marks[i].x, g.yo, COLOR.mark, 3);
-      label(marks[i].text, marks[i].x, g.yo + 20, COLOR.mark);
+      label(marks[i].text, marks[i].x, g.yo + 26, COLOR.mark);
     }
   }
 
@@ -252,11 +276,22 @@
     return [{ hy: -g.h, color: COLOR.single }];
   }
 
+  // The object is AB and its image A'B', with A the end on the axis when
+  // only half the object is drawn and the lower end when it is not.
+  function endsOf(g, atX, footY, tipY, prime, color, side) {
+    var dx = side === "right" ? 9 : -9;
+    var align = side === "right" ? "left" : "right";
+    label("A" + prime, atX + dx, footY, color, align);
+    label("B" + prime, atX + dx, tipY, color, align);
+  }
+
   function drawObject(g, u, ph) {
     var x = g.xo - u;
     var c = state.full ? COLOR.mark : COLOR.single;
+    var footY = state.full ? g.yo + g.h : g.yo - 12;
     if (state.full) arrow(x, g.yo + g.h, x, g.yo - g.h, c, 3, false, ph);
     else arrow(x, g.yo, x, g.yo - g.h, c, 3, false, ph);
+    if (ph >= 1) endsOf(g, x, footY, g.yo - g.h, "", c, "left");
   }
 
   // Object at infinity: parallel rays that meet at the second focus.
@@ -268,9 +303,11 @@
       var col = !state.full ? COLOR.single
         : hy < 0 ? COLOR.upper : hy > 0 ? COLOR.lower : COLOR.mark;
       grow(6, g.yo + hy, g.xo, g.yo + hy, col, 2, false, ph.rayIn);
+      chevron(6, g.yo + hy, g.xo, g.yo + hy, col, ph.rayIn);
       if (ph.rayOut <= 0) continue;
       var end = toEdge(g, g.xo, g.yo + hy, g.f, -hy);
       grow(g.xo, g.yo + hy, end.x, end.y, col, 2, false, ph.rayOut);
+      chevron(g.xo, g.yo + hy, end.x, end.y, col, ph.rayOut);
     }
     if (ph.image > 0) {
       ctx.save();
@@ -316,6 +353,8 @@
       // Incident rays: one parallel to the axis, one through the centre.
       grow(g.xo - u, g.yo + hy, g.xo, g.yo + hy, col, 2, false, ph.rayIn);
       grow(g.xo - u, g.yo + hy, g.xo, g.yo, col, 2, false, ph.rayIn);
+      chevron(g.xo - u, g.yo + hy, g.xo, g.yo + hy, col, ph.rayIn);
+      chevron(g.xo - u, g.yo + hy, g.xo, g.yo, col, ph.rayIn);
       if (ph.rayOut <= 0) continue;
 
       // Refracted rays. The first leaves the lens heading through F₂, the
@@ -335,6 +374,7 @@
           stop = { x: xi, y: g.yo - hy * img.m };
         }
         grow(d.x, d.y, stop.x, stop.y, col, 2, false, ph.rayOut);
+        chevron(d.x, d.y, stop.x, stop.y, col, ph.rayOut);
 
         // A virtual image sits where the refracted rays appear to come
         // from, so trace them backwards to it.
@@ -355,6 +395,10 @@
         var c = state.full ? COLOR.mark : COLOR.single;
         if (state.full) arrow(xi, botY, xi, topY, c, 3, virtual, 1);
         else arrow(xi, g.yo, xi, topY, c, 3, virtual, 1);
+        // Label on the far side of the image from the lens, so the names
+        // never sit between the image and the rays that formed it.
+        endsOf(g, xi, state.full ? botY : g.yo - 12, topY, "'", c,
+          xi > g.xo ? "right" : "left");
       } else {
         // Just past the focus the image runs thousands of pixels away.
         // Say so at the edge rather than drawing off into nowhere.
@@ -462,11 +506,9 @@
     state.r = Math.min(HI, Math.max(LO, r));
     if (!fromSlider) slider.value = state.r;
 
+    // Moving the slider or dragging the object is no longer one of the
+    // standard cases, so nothing stays highlighted.
     state.preset = null;
-    for (var key in CASES) {
-      var c = CASES[key];
-      if (c.r !== null && Math.abs(c.r - state.r) < 0.005) { state.preset = key; break; }
-    }
     syncPresets();
     updateHint();
     draw();
