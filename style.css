@@ -1,104 +1,246 @@
-* {
-    box-sizing: border-box;
-  }
-  
-  body {
-    background-color: #333;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-family: Arial, Helvetica, sans-serif;
-    min-height: 100vh;
-    margin: 0;
-  }
-  
-  #canvas {
-    position: relative;
-    background: #ececec;
-    border-radius: 5px;
-  }
+* { box-sizing: border-box; }
 
-  .slider {
-    direction: rtl;
-  }
+:root {
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --panel-2: #172033;
+  --line: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --on: #22c55e;
+  --paper: #fbfcfe;
+}
 
-  .slideContainer {
-    position: absolute;
-    bottom: 100px;
-  }
-  .option {
-    background-color: #ddd;
-    padding: 5px 15px 5px 15px;
-    border: 1px solid #000;
-    border-radius: 10px;
-    position: absolute;
-    top: 120px;
-    left: 0px; 
-    color:#000;
-    font-size: 18px;
-  }
-  /* The container */
-.container {
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app { display: flex; height: 100%; gap: 14px; padding: 14px; }
+
+/* ---------- control panel ---------- */
+
+.panel {
+  width: 340px;
+  flex: 0 0 340px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  /* Right padding is short by the scrollbar gutter, which is always
+     reserved, so the margins look equal and nothing shifts sideways
+     when the bar appears. */
+  padding: 18px 11px 18px 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+.panel:hover { scrollbar-color: rgba(148, 163, 184, 0.5) transparent; }
+
+.panel::-webkit-scrollbar { width: 11px; }
+.panel::-webkit-scrollbar-track { background: transparent; }
+
+.panel::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.3);
+  background-clip: content-box;
+  border: 3px solid transparent;
+  border-radius: 999px;
+}
+
+.panel::-webkit-scrollbar-thumb:hover { background-color: rgba(148, 163, 184, 0.5); }
+
+.panel h1 { margin: 0; font-size: 19px; letter-spacing: -0.01em; }
+
+.sub { margin: 3px 0 14px; font-size: 13px; color: var(--muted); }
+
+.power {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px 9px 13px;
+  margin-bottom: 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.power-label { flex: 1; font-size: 13px; font-weight: 600; color: var(--muted); }
+
+.switch { display: flex; gap: 3px; }
+
+.switch button {
+  min-width: 52px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.switch button:hover { color: var(--text); }
+#lightOff[aria-pressed="true"] { background: #475569; color: #f1f5f9; }
+#lightOn[aria-pressed="true"] { background: var(--on); color: #052e14; }
+
+.modes {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  margin-bottom: 18px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.modes button {
+  flex: 1;
+  padding: 7px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modes button:hover { color: var(--text); }
+.modes button[aria-pressed="true"] { background: var(--accent); color: #07131e; }
+
+.control { margin-bottom: 18px; }
+
+.control label {
   display: block;
-  position: relative;
-  padding-left: 35px;
-  cursor: pointer;
-  font-size: 18px;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
-/* Hide the browser's default radio button */
-.container input {
-  position: absolute;
-  opacity: 0;
+input[type="range"] {
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
 }
 
-/* Create a custom radio button */
-.checkmark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 25px;
-  width: 25px;
-  background-color: #eee;
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px;
+  background: var(--line);
+  border-radius: 999px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5.5px;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 5px;
+  background: var(--line);
+  border-radius: 999px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  border: none;
   border-radius: 50%;
 }
 
-/* On mouse-over, add a grey background color */
-.container:hover input ~ .checkmark {
-  background-color: #ccc;
+input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+.scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
 }
 
-/* When the radio button is checked, add a blue background */
-.container input:checked ~ .checkmark {
-  background-color: #2196F3;
+/* ---------- presets ---------- */
+
+.presets-label {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
-/* Create the indicator (the dot/circle - hidden when not checked) */
-.checkmark:after {
-  content: "";
-  position: absolute;
-  display: none;
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+.presets button {
+  padding: 9px 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-/* Show the indicator (dot/circle) when checked */
-.container input:checked ~ .checkmark:after {
-  display: block;
+.presets button:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+.presets button[aria-pressed="true"] { background: var(--accent); color: #07131e; border-color: var(--accent); }
+
+.hint { margin: 16px 0 0; font-size: 12px; line-height: 1.55; color: var(--muted); }
+
+/* Locked while the light is off or the trace is playing. */
+.locked .control,
+.locked .presets,
+.locked .presets-label { opacity: 0.4; }
+.locked .control, .locked .presets { pointer-events: none; }
+
+/* ---------- stage ---------- */
+
+.stage { display: flex; flex: 1; min-width: 0; }
+
+.card {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
 }
 
-/* Style the indicator (dot/circle) */
-.container .checkmark:after {
- 	top: 9px;
-	left: 9px;
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-	background: white;
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+[hidden] { display: none !important; }
+
+@media (max-width: 900px) {
+  html, body { height: auto; }
+  .app { flex-direction: column; height: auto; min-height: 100vh; }
+  .panel { width: auto; flex: none; overflow: visible; padding-right: 20px; }
+  /* The stage needs a definite height here. Without one the canvas
+     height:100% resolves against a box the canvas itself is sizing,
+     and the two chase each other. */
+  .stage { flex: none; height: 62vh; }
+  .card { min-height: 0; }
 }
-  
