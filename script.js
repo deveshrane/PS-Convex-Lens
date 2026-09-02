@@ -366,13 +366,10 @@
       ];
 
       for (var k = 0; k < dirs.length; k++) {
+        // Light does not stop where the rays meet. Each refracted ray
+        // crosses at the image and carries on off the canvas.
         var d = dirs[k];
-        var stop;
-        if (img.atInfinity || !onCanvas || img.vf < 0) {
-          stop = toEdge(g, d.x, d.y, d.dx, d.dy);
-        } else {
-          stop = { x: xi, y: g.yo - hy * img.m };
-        }
+        var stop = toEdge(g, d.x, d.y, d.dx, d.dy);
         grow(d.x, d.y, stop.x, stop.y, col, 2, false, ph.rayOut);
         chevron(d.x, d.y, stop.x, stop.y, col, ph.rayOut);
 
