@@ -342,11 +342,9 @@
   // a virtual image, so the cone itself is traced back to the image head
   // instead: the same cone, dotted, being where the light only appears to
   // have come from.
-  function drawBackCone(g, hy, img, p) {
+  function drawBackCone(g, xi, yi, p) {
     if (p <= 0) return;
     var topY = g.yo - g.a, botY = g.yo + g.a;
-    var xi = g.xo + img.vf * g.f;
-    var yi = g.yo - hy * img.m;
 
     // Both edges converge on the same point, so the shape closes from a
     // trapezoid to a triangle as it reaches the image.
@@ -375,6 +373,64 @@
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
+  }
+
+
+  // An object at infinity fills the aperture with parallel light, so what
+  // arrives is a band rather than a cone. It still leaves through the
+  // focus, which is the whole point of the case.
+  function drawInfinityBeam(g, ph, Fx, virtualFocus) {
+    var topY = g.yo - g.a, botY = g.yo + g.a;
+    var plane = g.xo;
+
+    ctx.save();
+    ctx.setLineDash([]);
+    ctx.fillStyle = COLOR.beam;
+
+    if (ph.rayIn > 0) {
+      var bx = 6 + (plane - 6) * ph.rayIn;
+      ctx.beginPath();
+      ctx.rect(6, topY, bx - 6, botY - topY);
+      ctx.fill();
+    }
+
+    if (ph.rayOut > 0) {
+      var dT = { x: Fx - plane, y: g.yo - topY };
+      var dB = { x: Fx - plane, y: g.yo - botY };
+      // A virtual focus is one the light only appears to come from, so
+      // the light runs away from it rather than towards it.
+      if (virtualFocus) {
+        dT.x = -dT.x; dT.y = -dT.y; dB.x = -dB.x; dB.y = -dB.y;
+      }
+
+      var diag = Math.sqrt(g.W * g.W + g.H * g.H);
+      var L = 4 * diag;
+      var nT = Math.sqrt(dT.x * dT.x + dT.y * dT.y) || 1;
+      var nB = Math.sqrt(dB.x * dB.x + dB.y * dB.y) || 1;
+
+      var reach = 0;
+      var cs = [[0, 0], [g.W, 0], [0, g.H], [g.W, g.H]];
+      for (var c = 0; c < 4; c++) {
+        var ddx = cs[c][0] - plane, ddy = cs[c][1] - g.yo;
+        reach = Math.max(reach, Math.sqrt(ddx * ddx + ddy * ddy));
+      }
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(plane, g.yo, ph.rayOut * reach, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.moveTo(plane, topY);
+      ctx.lineTo(plane + (dT.x / nT) * L, topY + (dT.y / nT) * L);
+      ctx.lineTo(plane + (dB.x / nB) * L, botY + (dB.y / nB) * L);
+      ctx.lineTo(plane, botY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+
+    if (virtualFocus) drawBackCone(g, Fx, g.yo, ph.back);
   }
 
   function drawMarks(g) {
@@ -432,7 +488,7 @@
   function drawInfinity(g, ph) {
     var heights = [-g.h, 0, g.h];
     var F2x = g.xo + g.f;
-    for (var i = 0; i < heights.length; i++) {
+    for (var i = 0; state.show !== "cone" && i < heights.length; i++) {
       var hy = heights[i];
       var col = !state.full ? COLOR.single
         : hy < 0 ? COLOR.upper : hy > 0 ? COLOR.lower : COLOR.mark;
@@ -467,7 +523,12 @@
     var ph = phases();
     if (!ph) { drawLens(g); return; }
 
-    if (state.atInfinity) { drawLens(g); drawInfinity(g, ph); return; }
+    if (state.atInfinity) {
+      if (state.show !== "rays") drawInfinityBeam(g, ph, g.xo + g.f, false);
+      drawLens(g);
+      drawInfinity(g, ph);
+      return;
+    }
 
     var r = state.r;
     var u = r * g.f;
@@ -487,7 +548,7 @@
         // Wherever the cone is shown, it is traced back to the image head.
         // Showing the rays as well keeps their dashed extensions too, so
         // the two constructions can be read against each other.
-        if (virtual) drawBackCone(g, tips[t0].hy, img, ph.back);
+        if (virtual) drawBackCone(g, g.xo + img.vf * g.f, g.yo - tips[t0].hy * img.m, ph.back);
       }
     }
 
