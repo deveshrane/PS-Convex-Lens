@@ -19,6 +19,7 @@
     single: "#111827",
     upper: "#ab1e00",
     lower: "#0014b8",
+    beam: "rgba(252, 205, 42, 0.22)",
     note: "#64748b",
     halo: "rgba(251,252,254,0.92)"
   };
@@ -254,6 +255,66 @@
     ctx.stroke();
   }
 
+  // The light itself, rather than the two rays chosen to construct with.
+  // A point on the object sends light in every direction; the lens gathers
+  // the whole cone that lands on its aperture, and every ray of it comes
+  // back together at one image point. The construction rays are simply two
+  // convenient members of this cone.
+  function drawBeam(g, hy, u, img, ph) {
+    var ax = g.xo - u, ay = g.yo + hy;
+    var topY = g.yo - g.a, botY = g.yo + g.a;
+
+    ctx.save();
+    ctx.setLineDash([]);
+    ctx.fillStyle = COLOR.beam;
+
+    // Spreading out from the head of the object to the whole aperture.
+    if (ph.rayIn > 0) {
+      var t = ph.rayIn;
+      var bx = ax + (g.xo - ax) * t;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(bx, ay + (topY - ay) * t);
+      ctx.lineTo(bx, ay + (botY - ay) * t);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // After the lens every ray heads for the image point, crosses there
+    // and carries on. Drawn as one crossed quadrilateral: it fills as the
+    // bow-tie it is for a real image, and degenerates by itself into a
+    // spreading cone for a virtual one and a parallel band when the image
+    // is at infinity.
+    if (ph.rayOut > 0) {
+      var dT, dB;
+      if (img.atInfinity) {
+        // Every ray leaves parallel to the one through the optical centre.
+        dT = { x: u, y: -hy };
+        dB = { x: u, y: -hy };
+      } else {
+        var xi = g.xo + img.vf * g.f;
+        var yi = g.yo - hy * img.m;
+        dT = { x: xi - g.xo, y: yi - topY };
+        dB = { x: xi - g.xo, y: yi - botY };
+        // A virtual image is behind the light, so the ray runs away from
+        // it rather than towards it.
+        if (dT.x < 0) { dT.x = -dT.x; dT.y = -dT.y; }
+        if (dB.x < 0) { dB.x = -dB.x; dB.y = -dB.y; }
+      }
+      var eT = toEdge(g, g.xo, topY, dT.x, dT.y);
+      var eB = toEdge(g, g.xo, botY, dB.x, dB.y);
+      var s = ph.rayOut;
+      ctx.beginPath();
+      ctx.moveTo(g.xo, topY);
+      ctx.lineTo(g.xo + (eT.x - g.xo) * s, topY + (eT.y - topY) * s);
+      ctx.lineTo(g.xo + (eB.x - g.xo) * s, botY + (eB.y - botY) * s);
+      ctx.lineTo(g.xo, botY);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function drawMarks(g) {
     line(0, g.yo, g.W, g.yo, COLOR.axis, 1.2, false);
     // The lens plane, drawn from one tip of the lens to the other.
@@ -340,12 +401,11 @@
     var g = geometry(W, H);
 
     drawMarks(g);
-    drawLens(g);
 
     var ph = phases();
-    if (!ph) return;
+    if (!ph) { drawLens(g); return; }
 
-    if (state.atInfinity) { drawInfinity(g, ph); return; }
+    if (state.atInfinity) { drawLens(g); drawInfinity(g, ph); return; }
 
     var r = state.r;
     var u = r * g.f;
@@ -354,6 +414,14 @@
 
     var xi = img.atInfinity ? null : g.xo + img.vf * g.f;
     var onCanvas = xi !== null && xi > 4 && xi < W - 4;
+
+    // Laid down first, so the lens, the rays and the labels all sit over
+    // it and stay crisp.
+    for (var t0 = 0; t0 < tips.length; t0++) {
+      drawBeam(g, tips[t0].hy, u, img, ph);
+    }
+
+    drawLens(g);
 
     // A virtual image sits where the refracted rays appear to come from.
     // These are drawn first so the light rays lie over them, rather than
