@@ -20,6 +20,8 @@
     upper: "#ab1e00",
     lower: "#0014b8",
     beam: "rgba(252, 205, 42, 0.22)",
+    beamBack: "rgba(252, 205, 42, 0.13)",
+    beamEdge: "#c9971a",
     note: "#64748b",
     halo: "rgba(251,252,254,0.92)"
   };
@@ -336,6 +338,45 @@
     ctx.restore();
   }
 
+  // With the rays hidden there is nothing to carry the dashes that locate
+  // a virtual image, so the cone itself is traced back to the image head
+  // instead: the same cone, dotted, being where the light only appears to
+  // have come from.
+  function drawBackCone(g, hy, img, p) {
+    if (p <= 0) return;
+    var topY = g.yo - g.a, botY = g.yo + g.a;
+    var xi = g.xo + img.vf * g.f;
+    var yi = g.yo - hy * img.m;
+
+    // Both edges converge on the same point, so the shape closes from a
+    // trapezoid to a triangle as it reaches the image.
+    var ex = g.xo + (xi - g.xo) * p;
+    var eyT = topY + (yi - topY) * p;
+    var eyB = botY + (yi - botY) * p;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(g.xo, topY);
+    ctx.lineTo(ex, eyT);
+    ctx.lineTo(ex, eyB);
+    ctx.lineTo(g.xo, botY);
+    ctx.closePath();
+    ctx.fillStyle = COLOR.beamBack;
+    ctx.fill();
+
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = COLOR.beamEdge;
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(g.xo, topY);
+    ctx.lineTo(ex, eyT);
+    ctx.moveTo(g.xo, botY);
+    ctx.lineTo(ex, eyB);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
   function drawMarks(g) {
     line(0, g.yo, g.W, g.yo, COLOR.axis, 1.2, false);
     // The lens plane, drawn from one tip of the lens to the other.
@@ -438,9 +479,14 @@
 
     // Laid down first, so the lens, the rays and the labels all sit over
     // it and stay crisp.
+    var virtual = !img.atInfinity && img.vf < 0;
+
     if (state.show !== "rays") {
       for (var t0 = 0; t0 < tips.length; t0++) {
         drawBeam(g, tips[t0].hy, u, img, ph);
+        if (state.show === "cone" && virtual) {
+          drawBackCone(g, tips[t0].hy, img, ph.back);
+        }
       }
     }
 
@@ -449,7 +495,7 @@
     // A virtual image sits where the refracted rays appear to come from.
     // These are drawn first so the light rays lie over them, rather than
     // being broken up by dashes where the two cross.
-    if (!img.atInfinity && img.vf < 0 && ph.back > 0) {
+    if (state.show !== "cone" && virtual && ph.back > 0) {
       for (var b = 0; b < tips.length; b++) {
         var bhy = tips[b].hy;
         var by = g.yo - bhy * img.m;
