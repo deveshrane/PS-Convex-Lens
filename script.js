@@ -57,6 +57,7 @@
     r: 3,               // object distance as a multiple of f
     atInfinity: false,
     full: false,        // half object or the whole arrow
+    show: "rays",       // rays | both | cone
     lightOn: false,
     playing: false,
     t0: 0,
@@ -301,16 +302,36 @@
         if (dT.x < 0) { dT.x = -dT.x; dT.y = -dT.y; }
         if (dB.x < 0) { dB.x = -dB.x; dB.y = -dB.y; }
       }
-      var eT = toEdge(g, g.xo, topY, dT.x, dT.y);
-      var eB = toEdge(g, g.xo, botY, dB.x, dB.y);
-      var s = ph.rayOut;
+      // Run the two edges far past the sheet rather than stopping them on
+      // it. Ending them exactly at the boundary made the polygon close
+      // along a straight chord between two different edges, which sliced
+      // the corner off a wide cone instead of letting it leave the sheet.
+      var diag = Math.sqrt(g.W * g.W + g.H * g.H);
+      var L = 4 * diag;
+      var nT = Math.sqrt(dT.x * dT.x + dT.y * dT.y) || 1;
+      var nB = Math.sqrt(dB.x * dB.x + dB.y * dB.y) || 1;
+
+      // Growth is then a wavefront sweeping out from the lens, which
+      // paces it and keeps the shape right at every moment.
+      var reach = 0;
+      var cs = [[0, 0], [g.W, 0], [0, g.H], [g.W, g.H]];
+      for (var c = 0; c < 4; c++) {
+        var dx = cs[c][0] - g.xo, dy = cs[c][1] - g.yo;
+        reach = Math.max(reach, Math.sqrt(dx * dx + dy * dy));
+      }
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(g.xo, g.yo, ph.rayOut * reach, 0, Math.PI * 2);
+      ctx.clip();
       ctx.beginPath();
       ctx.moveTo(g.xo, topY);
-      ctx.lineTo(g.xo + (eT.x - g.xo) * s, topY + (eT.y - topY) * s);
-      ctx.lineTo(g.xo + (eB.x - g.xo) * s, botY + (eB.y - botY) * s);
+      ctx.lineTo(g.xo + (dT.x / nT) * L, topY + (dT.y / nT) * L);
+      ctx.lineTo(g.xo + (dB.x / nB) * L, botY + (dB.y / nB) * L);
       ctx.lineTo(g.xo, botY);
       ctx.closePath();
       ctx.fill();
+      ctx.restore();
     }
     ctx.restore();
   }
@@ -417,8 +438,10 @@
 
     // Laid down first, so the lens, the rays and the labels all sit over
     // it and stay crisp.
-    for (var t0 = 0; t0 < tips.length; t0++) {
-      drawBeam(g, tips[t0].hy, u, img, ph);
+    if (state.show !== "rays") {
+      for (var t0 = 0; t0 < tips.length; t0++) {
+        drawBeam(g, tips[t0].hy, u, img, ph);
+      }
     }
 
     drawLens(g);
@@ -437,7 +460,7 @@
 
     drawObject(g, u, ph.object);
 
-    for (var i = 0; i < tips.length; i++) {
+    for (var i = 0; state.show !== "cone" && i < tips.length; i++) {
       var hy = tips[i].hy;
       var col = tips[i].color;
 
@@ -645,6 +668,21 @@
 
   $("modeHalf").addEventListener("click", function () { setMode(false); });
   $("modeFull").addEventListener("click", function () { setMode(true); });
+
+  // The two construction rays are the default; the cone is what is really
+  // there, and both together show that the rays are two members of it.
+  function setShow(which) {
+    if (which === state.show) return;
+    state.show = which;
+    $("showRays").setAttribute("aria-pressed", String(which === "rays"));
+    $("showBoth").setAttribute("aria-pressed", String(which === "both"));
+    $("showCone").setAttribute("aria-pressed", String(which === "cone"));
+    if (state.lightOn) play(); else draw();
+  }
+
+  $("showRays").addEventListener("click", function () { setShow("rays"); });
+  $("showBoth").addEventListener("click", function () { setShow("both"); });
+  $("showCone").addEventListener("click", function () { setShow("cone"); });
 
   /* ------------------------------------------------------------------
      Dragging the object
