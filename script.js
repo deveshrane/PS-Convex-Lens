@@ -484,9 +484,10 @@
     if (state.show !== "rays") {
       for (var t0 = 0; t0 < tips.length; t0++) {
         drawBeam(g, tips[t0].hy, u, img, ph);
-        if (state.show === "cone" && virtual) {
-          drawBackCone(g, tips[t0].hy, img, ph.back);
-        }
+        // Wherever the cone is shown, it is traced back to the image head.
+        // Showing the rays as well keeps their dashed extensions too, so
+        // the two constructions can be read against each other.
+        if (virtual) drawBackCone(g, tips[t0].hy, img, ph.back);
       }
     }
 
